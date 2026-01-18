@@ -120,7 +120,9 @@ export interface FormulaPair {
   formula: string;
 }
 
-const FORMULA_REGEX = /\{\{f::([^:]+?)::([^}]+)\}\}/g;
+// Match formula syntax: {{f::name::formula}}
+// Use lazy match with lookahead to find the closing }} instead of stopping at first }
+const FORMULA_REGEX = /\{\{f::([^:]+?)::([\s\S]+?)\}\}/g;
 
 /**
  * Parse a formula pair from a template string

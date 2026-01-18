@@ -75,7 +75,8 @@ export function CardFormModal({ open, onOpenChange, card }: CardFormModalProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!front.trim() || !back.trim() || selectedTopicIds.length === 0) return;
+    // Back is only required for basic cards (cloze/formula generate it automatically)
+    if (!front.trim() || (cardType === 'basic' && !back.trim()) || selectedTopicIds.length === 0) return;
 
     setIsSubmitting(true);
     try {
@@ -256,7 +257,8 @@ export function CardFormModal({ open, onOpenChange, card }: CardFormModalProps) 
               type="submit"
               disabled={
                 !front.trim() ||
-                !back.trim() ||
+                // Back is only required for basic cards (cloze/formula generate it automatically)
+                (cardType === 'basic' && !back.trim()) ||
                 selectedTopicIds.length === 0 ||
                 isSubmitting
               }
