@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Mode - "Warm Paper" */
+    --background: 40 20% 97%; /* #FAF9F7 */
+    --foreground: 0 0% 10%; /* #1A1A1A */
+
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --primary: 16 55% 50%; /* #C75D38 - Terracotta */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 40 15% 94%; /* #F3F1ED */
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 40 15% 94%;
+    --muted-foreground: 0 0% 42%; /* #6B6B6B */
+
+    --accent: 16 55% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 65% 48%; /* #C53030 */
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 47% 33%; /* #2D7D5A */
+    --success-foreground: 0 0% 100%;
+
+    --border: 36 15% 88%; /* #E5E2DC */
+    --input: 36 15% 88%;
+    --ring: 16 55% 50%;
+
+    --radius: 8px;
+  }
+
+  .dark {
+    /* Dark Mode - "Deep Slate" */
+    --background: 240 6% 9%; /* #161618 */
+    --foreground: 30 6% 96%; /* #F5F5F4 */
+
+    --card: 240 5% 13%; /* #1E1E21 */
+    --card-foreground: 30 6% 96%;
+
+    --popover: 240 4% 15%; /* #252529 */
+    --popover-foreground: 30 6% 96%;
+
+    --primary: 16 70% 60%; /* #E07A54 - Warmer terracotta */
+    --primary-foreground: 0 0% 10%;
+
+    --secondary: 240 5% 13%;
+    --secondary-foreground: 30 6% 96%;
+
+    --muted: 240 5% 18%;
+    --muted-foreground: 240 5% 65%; /* #A1A1AA */
+
+    --accent: 16 70% 60%;
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 47% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 240 4% 18%; /* #2E2E33 */
+    --input: 240 4% 18%;
+    --ring: 16 70% 60%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  /* Card animations */
+  .card-flip {
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-flip.revealed {
+    transform: rotateY(180deg);
+  }
+
+  .card-front,
+  .card-back {
+    backface-visibility: hidden;
+  }
+
+  .card-back {
+    transform: rotateY(180deg);
+  }
+
+  /* Stagger animation utility */
+  .stagger-item {
+    animation: fade-up 0.4s ease-out forwards;
+    animation-delay: calc(var(--index, 0) * 50ms);
+    opacity: 0;
+  }
+
+  /* Response button hover effects */
+  .response-btn {
+    @apply transition-all duration-150 ease-out;
+  }
+
+  .response-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Focus ring utility */
+  .focus-ring {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+/* KaTeX overrides for better integration */
+.katex {
+  font-size: 1.1em;
+}
+
+.dark .katex {
+  color: inherit;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/30;
+}

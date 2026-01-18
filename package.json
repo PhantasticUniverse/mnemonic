@@ -1,0 +1,28 @@
+{
+  "name": "mnemonic",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "dev": "bun run --filter @mnemonic/web dev",
+    "build": "bun run --filter @mnemonic/core build && bun run --filter @mnemonic/web build",
+    "test": "vitest",
+    "lint": "eslint packages --ext .ts,.tsx",
+    "format": "prettier --write \"packages/**/*.{ts,tsx,css,json}\""
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.2.1",
+    "@types/node": "^20.11.24",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "fake-indexeddb": "^5.0.2",
+    "prettier": "^3.2.5",
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.5"
+  }
+}
