@@ -220,6 +220,21 @@ export const sessionService = {
   async getRecent(limit = 10): Promise<ReviewSession[]> {
     return db.sessions.orderBy('startedAt').reverse().limit(limit).toArray();
   },
+
+  async hasActiveSession(): Promise<boolean> {
+    const active = await db.sessions.where('isActive').equals(1).first();
+    return !!active;
+  },
+
+  async abandonSession(): Promise<void> {
+    const active = await db.sessions.where('isActive').equals(1).first();
+    if (active) {
+      active.isActive = false;
+      active.completedAt = new Date();
+      active.totalTimeMs = active.completedAt.getTime() - active.startedAt.getTime();
+      await db.sessions.put(active);
+    }
+  },
 };
 
 // Daily stats operations
@@ -339,6 +354,125 @@ export const statsService = {
     const remembered = stats.reduce((sum, s) => sum + s.cardsRemembered, 0);
 
     return total > 0 ? remembered / total : 0;
+  },
+};
+
+// Data export/import
+export interface ExportData {
+  version: number;
+  exportedAt: Date;
+  cards: Card[];
+  topics: Topic[];
+  sessions: ReviewSession[];
+  dailyStats: DailyStats[];
+}
+
+export const dataService = {
+  async exportAll(): Promise<ExportData> {
+    const cards = await db.cards.toArray();
+    const topics = await db.topics.toArray();
+    const sessions = await db.sessions.toArray();
+    const dailyStats = await db.dailyStats.toArray();
+
+    return {
+      version: 1,
+      exportedAt: new Date(),
+      cards,
+      topics,
+      sessions,
+      dailyStats,
+    };
+  },
+
+  async importAll(data: ExportData, mode: 'merge' | 'replace'): Promise<{ imported: number; errors: number }> {
+    let imported = 0;
+    let errors = 0;
+
+    try {
+      if (mode === 'replace') {
+        await db.cards.clear();
+        await db.topics.clear();
+        await db.sessions.clear();
+        await db.dailyStats.clear();
+      }
+
+      // Import topics first (cards reference topics)
+      for (const topic of data.topics) {
+        try {
+          if (mode === 'merge') {
+            const existing = await db.topics.get(topic.id);
+            if (!existing) {
+              await db.topics.add(topic);
+              imported++;
+            }
+          } else {
+            await db.topics.add(topic);
+            imported++;
+          }
+        } catch {
+          errors++;
+        }
+      }
+
+      // Import cards
+      for (const card of data.cards) {
+        try {
+          if (mode === 'merge') {
+            const existing = await db.cards.get(card.id);
+            if (!existing) {
+              await db.cards.add(card);
+              imported++;
+            }
+          } else {
+            await db.cards.add(card);
+            imported++;
+          }
+        } catch {
+          errors++;
+        }
+      }
+
+      // Import sessions
+      for (const session of data.sessions) {
+        try {
+          if (mode === 'merge') {
+            const existing = await db.sessions.get(session.id);
+            if (!existing) {
+              await db.sessions.add(session);
+              imported++;
+            }
+          } else {
+            await db.sessions.add(session);
+            imported++;
+          }
+        } catch {
+          errors++;
+        }
+      }
+
+      // Import daily stats
+      for (const stat of data.dailyStats) {
+        try {
+          if (mode === 'merge') {
+            const existing = await db.dailyStats.get(stat.date);
+            if (!existing) {
+              await db.dailyStats.add(stat);
+              imported++;
+            }
+          } else {
+            await db.dailyStats.add(stat);
+            imported++;
+          }
+        } catch {
+          errors++;
+        }
+      }
+    } catch (error) {
+      console.error('Import failed:', error);
+      throw error;
+    }
+
+    return { imported, errors };
   },
 };
 

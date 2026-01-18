@@ -10,7 +10,9 @@ export {
   topicService,
   sessionService,
   statsService,
+  dataService,
   initializeDatabase,
+  type ExportData,
 } from './db/database';
 
 // FSRS
@@ -42,8 +44,12 @@ export {
   hasCloze,
   countClozeDeletions,
   generateClozeCards,
+  parseFormula,
+  hasFormula,
+  generateFormulaCards,
   type ClozeDeletion,
   type ParsedCloze,
+  type FormulaPair,
 } from './utils/cloze-parser';
 
 // Re-export ts-fsrs types we use

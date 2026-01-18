@@ -36,6 +36,7 @@ export function ReviewPage() {
   const { topics, loadTopics } = useTopicStore();
   const [sessionStats, setSessionStats] = React.useState<SessionStats | null>(null);
   const [elapsedMs, setElapsedMs] = React.useState(0);
+  const [cardAnimationState, setCardAnimationState] = React.useState<'idle' | 'exiting' | 'entering'>('idle');
 
   // Load topics on mount
   React.useEffect(() => {
@@ -62,13 +63,13 @@ export function ReviewPage() {
         }
       },
       onForgot: () => {
-        if (currentCard && revealed) {
-          submitResponse(false);
+        if (currentCard && revealed && cardAnimationState === 'idle') {
+          handleAnimatedResponse(false);
         }
       },
       onRemembered: () => {
-        if (currentCard && revealed) {
-          submitResponse(true);
+        if (currentCard && revealed && cardAnimationState === 'idle') {
+          handleAnimatedResponse(true);
         }
       },
       onEscape: () => {
@@ -80,6 +81,25 @@ export function ReviewPage() {
 
   const handleStartSession = async (mode: 'micro' | 'standard') => {
     await startSession(mode);
+  };
+
+  const handleAnimatedResponse = async (remembered: boolean) => {
+    // Trigger exit animation
+    setCardAnimationState('exiting');
+
+    // Wait for exit animation
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    // Submit the response (this changes the currentCard)
+    await submitResponse(remembered);
+
+    // Trigger enter animation for next card
+    setCardAnimationState('entering');
+
+    // Wait for enter animation, then set to idle
+    setTimeout(() => {
+      setCardAnimationState('idle');
+    }, 300);
   };
 
   const handleExit = async () => {
@@ -146,13 +166,14 @@ export function ReviewPage() {
               topics={topics}
               revealed={revealed}
               onReveal={revealAnswer}
+              animationState={cardAnimationState}
             />
 
-            {revealed && intervals && (
+            {revealed && intervals && cardAnimationState === 'idle' && (
               <ReviewControls
                 intervals={intervals}
-                onForgot={() => submitResponse(false)}
-                onRemembered={() => submitResponse(true)}
+                onForgot={() => handleAnimatedResponse(false)}
+                onRemembered={() => handleAnimatedResponse(true)}
               />
             )}
 

@@ -8,6 +8,8 @@ import {
   getDueBreakdown,
   hasCloze,
   generateClozeCards,
+  hasFormula,
+  generateFormulaCards,
 } from '@mnemonic/core';
 
 interface CardState {
@@ -84,6 +86,28 @@ export const useCardStore = create<CardState>((set, get) => ({
       return firstCard!;
     }
 
+    // Check if this is a formula card that needs to be expanded
+    if (input.type === 'formula' && input.template && hasFormula(input.template)) {
+      const formulaCards = generateFormulaCards(input.template);
+      let firstCard: Card | null = null;
+
+      for (const formula of formulaCards) {
+        const card = await cardService.create({
+          type: 'formula',
+          front: formula.front,
+          back: formula.back,
+          topicIds: input.topicIds,
+          tags: input.tags,
+          template: input.template,
+        });
+        if (!firstCard) firstCard = card;
+      }
+
+      await get().loadCards();
+      await get().loadDueCounts();
+      return firstCard!;
+    }
+
     // Regular card creation
     const card = await cardService.create(input);
     await get().loadCards();
@@ -94,6 +118,7 @@ export const useCardStore = create<CardState>((set, get) => ({
   updateCard: async (input) => {
     await cardService.update(input);
     await get().loadCards();
+    await get().loadDueCounts();
   },
 
   deleteCard: async (id) => {

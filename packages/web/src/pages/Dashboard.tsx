@@ -2,19 +2,30 @@ import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCardStore } from '@/stores/card-store';
 import { useTopicStore } from '@/stores/topic-store';
+import { useReviewStore } from '@/stores/review-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { Play, Flame, Target, BookOpen } from 'lucide-react';
-import { statsService, type Streak } from '@mnemonic/core';
+import { Play, Flame, Target, BookOpen, RotateCcw, Download, Upload } from 'lucide-react';
+import { statsService, sessionService, dataService, type Streak } from '@mnemonic/core';
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { dueCount, dueBreakdown, loadDueCounts, cards } = useCardStore();
   const { topics, loadTopics } = useTopicStore();
+  const { resumeSession } = useReviewStore();
   const [streak, setStreak] = React.useState<Streak>({ current: 0, longest: 0, lastReviewDate: null });
   const [retentionRate, setRetentionRate] = React.useState(0);
+  const [showResumePrompt, setShowResumePrompt] = React.useState(false);
 
   // Load data on mount
   React.useEffect(() => {
@@ -23,7 +34,76 @@ export function DashboardPage() {
 
     statsService.getStreak().then(setStreak);
     statsService.getRetentionRate(30).then(setRetentionRate);
+
+    // Check for active session
+    sessionService.hasActiveSession().then((hasActive) => {
+      if (hasActive) {
+        setShowResumePrompt(true);
+      }
+    });
   }, [loadDueCounts, loadTopics]);
+
+  const handleResumeSession = async () => {
+    const resumed = await resumeSession();
+    setShowResumePrompt(false);
+    if (resumed) {
+      navigate('/review');
+    }
+  };
+
+  const handleAbandonSession = async () => {
+    await sessionService.abandonSession();
+    setShowResumePrompt(false);
+  };
+
+  const handleExport = async () => {
+    try {
+      const data = await dataService.exportAll();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mnemonic-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Export failed. Please try again.');
+    }
+  };
+
+  const handleImport = async (mode: 'merge' | 'replace') => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        if (!data.version || !data.cards || !data.topics) {
+          alert('Invalid backup file format.');
+          return;
+        }
+
+        const result = await dataService.importAll(data, mode);
+        alert(`Import complete: ${result.imported} items imported, ${result.errors} errors.`);
+
+        // Reload data
+        loadDueCounts();
+        loadTopics();
+      } catch (error) {
+        console.error('Import failed:', error);
+        alert('Import failed. Please check the file format.');
+      }
+    };
+    input.click();
+  };
 
   const greeting = React.useMemo(() => {
     const hour = new Date().getHours();
@@ -148,6 +228,50 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Data Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">Data</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export Data
+            </Button>
+            <Button variant="outline" onClick={() => handleImport('merge')}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import (Merge)
+            </Button>
+            <Button variant="outline" onClick={() => handleImport('replace')}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import (Replace)
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Resume Session Dialog */}
+        <Dialog open={showResumePrompt} onOpenChange={setShowResumePrompt}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <RotateCcw className="h-5 w-5" />
+                Resume Previous Session?
+              </DialogTitle>
+              <DialogDescription>
+                You have an unfinished review session. Would you like to continue where you left off?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-2 sm:gap-0">
+              <Button variant="outline" onClick={handleAbandonSession}>
+                Abandon
+              </Button>
+              <Button onClick={handleResumeSession}>
+                Resume Session
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -19,6 +19,9 @@ const CLOZE_REGEX = /\{\{c(\d+)::([^}]+?)(?:::([^}]+))?\}\}/g;
  * Parse all cloze deletions from a template string
  */
 export function parseCloze(template: string): ParsedCloze {
+  // Reset regex state at start to avoid issues from previous calls
+  CLOZE_REGEX.lastIndex = 0;
+
   const deletions: ClozeDeletion[] = [];
   let maxIndex = 0;
 
@@ -32,7 +35,7 @@ export function parseCloze(template: string): ParsedCloze {
     maxIndex = Math.max(maxIndex, index);
   }
 
-  // Reset regex state
+  // Reset regex state for next call
   CLOZE_REGEX.lastIndex = 0;
 
   return { deletions, maxIndex };
@@ -101,4 +104,74 @@ export function generateClozeCards(
   }
 
   return cards;
+}
+
+// ============================================================================
+// Formula Card Support
+// ============================================================================
+
+/**
+ * Formula pair parsed from template
+ * Syntax: {{f::name::formula}}
+ * Example: {{f::Determinant 2×2::ad - bc}}
+ */
+export interface FormulaPair {
+  name: string;
+  formula: string;
+}
+
+const FORMULA_REGEX = /\{\{f::([^:]+?)::([^}]+)\}\}/g;
+
+/**
+ * Parse a formula pair from a template string
+ * Returns the first formula found, or null if none
+ */
+export function parseFormula(template: string): FormulaPair | null {
+  FORMULA_REGEX.lastIndex = 0;
+  const match = FORMULA_REGEX.exec(template);
+  if (!match) return null;
+
+  return {
+    name: match[1].trim(),
+    formula: match[2].trim(),
+  };
+}
+
+/**
+ * Check if a string contains formula syntax
+ */
+export function hasFormula(text: string): boolean {
+  FORMULA_REGEX.lastIndex = 0;
+  return FORMULA_REGEX.test(text);
+}
+
+/**
+ * Generate reversible card pairs from a formula template
+ * Creates:
+ *   - Forward: name → $formula$
+ *   - Reverse: $formula$ → name
+ */
+export function generateFormulaCards(
+  template: string
+): Array<{ front: string; back: string; isReverse: boolean }> {
+  const formula = parseFormula(template);
+  if (!formula) return [];
+
+  // Wrap formula in $ for LaTeX rendering if not already wrapped
+  const formulaDisplay = formula.formula.startsWith('$')
+    ? formula.formula
+    : `$${formula.formula}$`;
+
+  return [
+    {
+      front: formula.name,
+      back: formulaDisplay,
+      isReverse: false,
+    },
+    {
+      front: formulaDisplay,
+      back: formula.name,
+      isReverse: true,
+    },
+  ];
 }

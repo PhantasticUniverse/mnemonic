@@ -4,11 +4,14 @@ import { Latex } from '@/components/ui/latex';
 import { Badge } from '@/components/ui/badge';
 import type { Card, Topic } from '@mnemonic/core';
 
+type AnimationState = 'idle' | 'exiting' | 'entering';
+
 interface ReviewCardProps {
   card: Card;
   topics: Topic[];
   revealed: boolean;
   onReveal: () => void;
+  animationState?: AnimationState;
   className?: string;
 }
 
@@ -17,6 +20,7 @@ export function ReviewCard({
   topics,
   revealed,
   onReveal,
+  animationState = 'idle',
   className,
 }: ReviewCardProps) {
   // Get topic names for display
@@ -43,6 +47,8 @@ export function ReviewCard({
         'bg-card rounded-lg border shadow-lg',
         'min-h-[400px] flex flex-col',
         'transition-all duration-300',
+        animationState === 'exiting' && 'animate-card-exit',
+        animationState === 'entering' && 'animate-card-enter',
         className
       )}
     >

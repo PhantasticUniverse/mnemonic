@@ -3,14 +3,17 @@ import { useCardStore } from '@/stores/card-store';
 import { useTopicStore } from '@/stores/topic-store';
 import { CardBrowser } from '@/components/cards/CardBrowser';
 import { QuickAddModal } from '@/components/cards/QuickAddModal';
+import { CardFormModal } from '@/components/cards/CardFormModal';
 import { Button } from '@/components/ui/button';
 import { useGlobalShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Plus } from 'lucide-react';
+import type { Card } from '@mnemonic/core';
 
 export function CardsPage() {
   const { loadCards } = useCardStore();
   const { loadTopics } = useTopicStore();
   const [showAddModal, setShowAddModal] = React.useState(false);
+  const [editingCard, setEditingCard] = React.useState<Card | null>(null);
 
   // Load data on mount
   React.useEffect(() => {
@@ -22,6 +25,16 @@ export function CardsPage() {
   useGlobalShortcuts({
     onQuickAdd: () => setShowAddModal(true),
   });
+
+  const handleEditCard = (card: Card) => {
+    setEditingCard(card);
+  };
+
+  const handleCloseEditModal = (open: boolean) => {
+    if (!open) {
+      setEditingCard(null);
+    }
+  };
 
   return (
     <div className="min-h-screen p-6 md:p-8 lg:p-12">
@@ -41,10 +54,17 @@ export function CardsPage() {
         </div>
 
         {/* Card Browser */}
-        <CardBrowser />
+        <CardBrowser onEditCard={handleEditCard} />
 
         {/* Quick Add Modal */}
         <QuickAddModal open={showAddModal} onOpenChange={setShowAddModal} />
+
+        {/* Edit Card Modal */}
+        <CardFormModal
+          open={!!editingCard}
+          onOpenChange={handleCloseEditModal}
+          card={editingCard}
+        />
       </div>
     </div>
   );

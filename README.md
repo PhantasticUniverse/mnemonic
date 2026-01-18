@@ -12,6 +12,9 @@ A local-first spaced repetition web app with topic graphs. Built with a focus on
 - **Offline-First**: All data stored locally in IndexedDB
 - **Dark Mode**: Automatic and manual theme switching
 - **Keyboard Shortcuts**: Fast reviewing with Space, 1/j, 2/k
+- **Session Resume**: Continue interrupted review sessions
+- **Data Portability**: Export/import your data as JSON
+- **Smooth Animations**: Card transitions during review
 
 ## Screenshots
 
@@ -19,7 +22,7 @@ The app features a clean, focused interface designed for studying:
 
 - **Dashboard**: View due cards, streak, retention rate, and topic breakdown
 - **Review**: Distraction-free card review with 2-button responses (Forgot/Remembered)
-- **Cards**: Browse, search, and manage your flashcard collection
+- **Cards**: Browse, search, edit, and manage your flashcard collection
 - **Topics**: Organize cards in a hierarchical topic tree
 
 ## Getting Started
@@ -63,7 +66,15 @@ The built files will be in `packages/web/dist/`.
 
 - **Basic**: Simple question and answer
 - **Cloze**: Use `{{c1::hidden text}}` syntax for fill-in-the-blank
-- **Formula**: Auto-reversible for learning equations both ways
+  - With hints: `{{c1::hidden::hint}}`
+  - Multiple deletions: `{{c1::first}} {{c2::second}}` (creates multiple cards)
+- **Formula**: Use `{{f::name::formula}}` for auto-reversible equation cards
+  - Example: `{{f::Pythagorean::a^2 + b^2 = c^2}}`
+  - Creates two cards: name → formula and formula → name
+
+### Editing Cards
+
+Click the edit button on any card in the Card Browser to modify it.
 
 ### LaTeX
 
@@ -81,6 +92,13 @@ Use standard LaTeX syntax in cards:
 | `Cmd/Ctrl + K` | Quick add card |
 | `Esc` | Exit/Close |
 
+### Data Management
+
+From the Dashboard, you can:
+- **Export Data**: Download a JSON backup of all your cards, topics, and stats
+- **Import (Merge)**: Add data from a backup without overwriting existing data
+- **Import (Replace)**: Replace all data with the backup contents
+
 ## Architecture
 
 ```
@@ -90,7 +108,7 @@ mnemonic/
 │   │   ├── models/     # TypeScript interfaces
 │   │   ├── db/         # IndexedDB with Dexie.js
 │   │   ├── fsrs/       # Spaced repetition scheduler
-│   │   └── utils/      # Cloze parser, helpers
+│   │   └── utils/      # Cloze/formula parser, helpers
 │   └── web/            # React application
 │       ├── components/ # UI components
 │       ├── pages/      # Route pages
@@ -111,7 +129,7 @@ mnemonic/
 ## Development
 
 ```bash
-# Run tests
+# Run tests (71 tests)
 bun test
 
 # Run tests for a specific package
@@ -124,6 +142,12 @@ bun run lint
 # Format code
 bun run format
 ```
+
+### Test Coverage
+
+- **Scheduler tests**: FSRS scheduling, interval formatting, due date calculations
+- **Queue builder tests**: Card filtering, topic interleaving, micro/standard modes
+- **Parser tests**: Cloze deletions, formula cards, edge cases
 
 ## License
 
